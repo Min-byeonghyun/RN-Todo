@@ -6,7 +6,9 @@ import {
   TouchableOpacity,
   TextInput,
   ScrollView,
+  Alert,
 } from "react-native";
+import Fontisto from "@expo/vector-icons/Fontisto";
 import { theme } from "./colors";
 import { useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -31,7 +33,9 @@ export default function App() {
 
   const loadTodos = async () => {
     const s = await AsyncStorage.getItem(STORAGE_KEY);
-    setTodos(JSON.parse(s));
+    if(s) {
+      setTodos(JSON.parse(s));
+    }
   };
 
   const addTodo = async () => {
@@ -43,10 +47,20 @@ export default function App() {
     await saveTodos(newTodos);
     setText("");
   };
-  const deleteTodo = async (key) => {
-    const newTodos = {};
-    setTodos(newTodos);
-    await saveTodos(newTodos);
+  const deleteTodo = (key) => {
+    Alert.alert("할 일 삭제", "삭제하시겠습니까?", [
+      { text: "취소" },
+      {
+        text: "확인",
+        style: "destructive",
+        onPress: () => {
+          const newTodos = { ...todos };
+          delete newTodos[key];
+          setTodos(newTodos);
+          saveTodos(newTodos);
+        },
+      },
+    ]);
   };
   return (
     <View style={styles.container}>
@@ -86,7 +100,7 @@ export default function App() {
             <View style={styles.todo} key={key}>
               <Text style={styles.todoText}>{todos[key].text}</Text>
               <TouchableOpacity onPress={() => deleteTodo(key)}>
-                <Text>❌</Text>
+                <Fontisto name="trash" size={18} color='red' />
               </TouchableOpacity>
             </View>
           ) : null
