@@ -1,11 +1,97 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { StatusBar } from "expo-status-bar";
+import {
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  TextInput,
+  ScrollView,
+} from "react-native";
+import { theme } from "./colors";
+import { useEffect, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+const STORAGE_KEY = "@todos";
 
 export default function App() {
+  const [working, setWorking] = useState(true);
+  const [text, setText] = useState("");
+  const [todos, setTodos] = useState({});
+
+  useEffect(() => {
+    loadTodos();
+  }, []);
+
+  const travel = () => setWorking(false);
+  const work = () => setWorking(true);
+  const onChangeText = (payload) => setText(payload);
+  const saveTodos = async (toSave) => {
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+  };
+
+  const loadTodos = async () => {
+    const s = await AsyncStorage.getItem(STORAGE_KEY);
+    setTodos(JSON.parse(s));
+  };
+
+  const addTodo = async () => {
+    if (text === "") {
+      return;
+    }
+    const newTodos = { ...todos, [Date.now()]: { text, working } };
+    setTodos(newTodos);
+    await saveTodos(newTodos);
+    setText("");
+  };
+  const deleteTodo = async (key) => {
+    const newTodos = {};
+    setTodos(newTodos);
+    await saveTodos(newTodos);
+  };
   return (
     <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
       <StatusBar style="auto" />
+      <View style={styles.header}>
+        <TouchableOpacity onPress={work}>
+          <Text
+            style={{ ...styles.btnText, color: working ? "white" : theme.grey }}
+          >
+            Work
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={travel}>
+          <Text
+            style={{
+              ...styles.btnText,
+              color: !working ? "white" : theme.grey,
+            }}
+          >
+            Travel
+          </Text>
+        </TouchableOpacity>
+      </View>
+      <View>
+        <TextInput
+          onSubmitEditing={addTodo}
+          onChangeText={onChangeText}
+          returnKeyType="done"
+          value={text}
+          placeholder={working ? "할 일 추가" : "어디로 가고싶니 ?"}
+          style={styles.input}
+        />
+      </View>
+      <ScrollView>
+        {Object.keys(todos).map((key) =>
+          todos[key].working === working ? (
+            <View style={styles.todo} key={key}>
+              <Text style={styles.todoText}>{todos[key].text}</Text>
+              <TouchableOpacity onPress={() => deleteTodo(key)}>
+                <Text>❌</Text>
+              </TouchableOpacity>
+            </View>
+          ) : null
+        )}
+      </ScrollView>
     </View>
   );
 }
@@ -13,8 +99,39 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: theme.bg,
+    paddingHorizontal: 20,
+  },
+  header: {
+    justifyContent: "space-between",
+    flexDirection: "row",
+    marginTop: 100,
+  },
+  btnText: {
+    fontSize: 38,
+    fontWeight: "600",
+  },
+  input: {
+    backgroundColor: "white",
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderRadius: 30,
+    fontSize: 18,
+    marginVertical: 20,
+  },
+  todo: {
+    backgroundColor: theme.grey,
+    marginBottom: 10,
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+    borderRadius: 15,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  todoText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "500",
   },
 });
